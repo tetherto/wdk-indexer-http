@@ -186,7 +186,7 @@ async function trackTotalHoldings (address) {
 
     const results = await client.getBatchTokenBalances(requests)
 
-    let total = BigInt(0)
+    let total = 0
     const balances = {}
 
     for (let i = 0; i < results.length; i++) {
@@ -194,7 +194,7 @@ async function trackTotalHoldings (address) {
       const chain = BLOCKCHAINS[i]
 
       if (chain && isTokenBalanceResponse(result)) {
-        const amount = BigInt(result.tokenBalance.amount)
+        const amount = parseFloat(result.tokenBalance.amount)
         if (amount > 0) {
           balances[chain] = result.tokenBalance.amount
           total += amount
@@ -206,7 +206,7 @@ async function trackTotalHoldings (address) {
     for (const [chain, amount] of Object.entries(balances)) {
       console.log(`  ${chain}: ${amount}`)
     }
-    console.log(`\nTotal: ${total.toString()}`)
+    console.log(`\nTotal: ${total}`)
   } catch (error) {
     handleError(error)
   }
