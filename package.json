@@ -1,0 +1,79 @@
+{
+  "name": "@tetherto/wdk-indexer-http",
+  "version": "1.0.0-beta.1",
+  "description": "HTTP client for the Tether WDK Indexer API - Access blockchain token transfers and balances",
+  "type": "module",
+  "main": "index.js",
+  "types": "types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./index.js"
+    },
+    "./bare": {
+      "types": "./types/index.d.ts",
+      "import": "./bare.js"
+    },
+    "./types": {
+      "types": "./types/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "bare.js",
+    "types",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "lint": "standard --ignore bare.js",
+    "lint:fix": "standard --ignore bare.js --fix",
+    "test": "brittle tests/*.test.js",
+    "test:integration": "brittle tests/*.integration.js",
+    "test:bare": "bare tests/bare-runtime.test.mjs",
+    "types": "tsc --declaration --emitDeclarationOnly --allowJs --outDir types"
+  },
+  "keywords": [
+    "tether",
+    "wdk",
+    "indexer",
+    "usdt",
+    "xaut",
+    "btc",
+    "blockchain",
+    "ethereum",
+    "tron",
+    "polygon",
+    "arbitrum",
+    "ton",
+    "bitcoin",
+    "token",
+    "transfers",
+    "balance",
+    "api",
+    "sdk"
+  ],
+  "author": "Tether Operations Limited",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=18",
+    "npm": ">=11"
+  },
+  "devDependencies": {
+    "brittle": "^3.7.0",
+    "standard": "^17.1.2",
+    "typescript": "^5.3.0"
+  },
+  "optionalDependencies": {
+    "bare-wdk-runtime": "2.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tetherto/wdk-indexer-http.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tetherto/wdk-indexer-http/issues"
+  },
+  "homepage": "https://github.com/tetherto/wdk-indexer-http#readme"
+}

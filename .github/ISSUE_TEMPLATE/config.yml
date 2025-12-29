@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://wdk-api.tether.io/docs
+    about: Check out the API documentation
+  - name: Get API Key
+    url: https://wdk-api.tether.io/register
+    about: Request an API key to use this SDK
