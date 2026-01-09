@@ -75,11 +75,11 @@ const client = new WdkIndexerClient({
 
 ### Supported Tokens
 
-| Token | Description |
-|-------|-------------|
-| `usdt` | Tether USD |
-| `xaut` | Tether Gold |
-| `btc` | Bitcoin |
+| Token | Description | Supported Blockchains |
+|-------|-------------|----------------------|
+| `usdt` | Tether USD | All blockchains |
+| `xaut` | Tether Gold | `ethereum`, `ton` |
+| `btc` | Bitcoin | `bitcoin`, `spark` |
 
 ### Methods
 
@@ -182,13 +182,17 @@ import {
   WdkIndexerError,
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
-  WdkIndexerNetworkError
+  WdkIndexerNetworkError,
+  WdkIndexerValidationError
 } from '@tetherto/wdk-indexer-http'
 
 try {
   const balance = await client.getTokenBalance('ethereum', 'usdt', '0x...')
 } catch (error) {
-  if (error instanceof WdkIndexerApiError) {
+  if (error instanceof WdkIndexerValidationError) {
+    // Invalid parameters (blockchain, token, or batch size limit exceeded)
+    console.error(`Validation error: ${error.message}`)
+  } else if (error instanceof WdkIndexerApiError) {
     // API returned an error response
     console.error(`API Error: ${error.message}`)
     console.error(`Status: ${error.status}`)
@@ -237,13 +241,16 @@ import type {
 ### Convenience Constants
 
 ```javascript
-import { BLOCKCHAINS, TOKENS } from '@tetherto/wdk-indexer-http'
+import { BLOCKCHAINS, TOKENS, BATCH_LIMIT } from '@tetherto/wdk-indexer-http'
 
 console.log(BLOCKCHAINS)
 // ['ethereum', 'sepolia', 'plasma', 'arbitrum', 'polygon', 'tron', 'ton', 'bitcoin', 'spark']
 
 console.log(TOKENS)
 // ['usdt', 'xaut', 'btc']
+
+console.log(BATCH_LIMIT)
+// 10
 ```
 
 ## Development

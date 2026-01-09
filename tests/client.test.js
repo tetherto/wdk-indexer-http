@@ -20,11 +20,13 @@ import {
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
   WdkIndexerNetworkError,
+  WdkIndexerValidationError,
   isApiError,
   isTokenTransfersResponse,
   isTokenBalanceResponse,
   BLOCKCHAINS,
   TOKENS,
+  BATCH_LIMIT,
   createClient
 } from '../index.js'
 
@@ -80,10 +82,11 @@ test('TOKENS - contains expected tokens', async (t) => {
 
 test('isApiError - returns true for API errors', async (t) => {
   t.ok(isApiError({ error: 'NotFound', message: 'Not found', status: 404 }))
+  t.ok(isApiError({ error: 'Bad Request', message: 'Invalid param' })) // without status
   t.absent(isApiError({ transfers: [] }))
   t.absent(isApiError(null))
   t.absent(isApiError(undefined))
-  t.absent(isApiError({ error: 'test' }))
+  t.absent(isApiError({ error: 'test' })) // missing message
 })
 
 test('isTokenTransfersResponse - returns true for transfer responses', async (t) => {
@@ -135,6 +138,88 @@ test('WdkIndexerNetworkError - includes cause', async (t) => {
   t.ok(error instanceof WdkIndexerError)
   t.is(error.name, 'WdkIndexerNetworkError')
   t.is(error.cause, cause)
+})
+
+test('WdkIndexerValidationError - extends WdkIndexerError', async (t) => {
+  const error = new WdkIndexerValidationError('Invalid blockchain')
+  t.ok(error instanceof WdkIndexerError)
+  t.is(error.name, 'WdkIndexerValidationError')
+  t.is(error.message, 'Invalid blockchain')
+})
+
+test('WdkIndexerApiError - handles missing status', async (t) => {
+  const error = new WdkIndexerApiError({
+    error: 'Bad Request',
+    message: 'Invalid param'
+  })
+  t.ok(error instanceof WdkIndexerError)
+  t.is(error.status, null)
+  t.is(error.errorType, 'Bad Request')
+})
+
+test('BATCH_LIMIT - is 10', async (t) => {
+  t.is(BATCH_LIMIT, 10)
+})
+
+test('WdkIndexerClient - validates blockchain parameter', async (t) => {
+  const mockFetch = async () => ({ ok: true, json: async () => ({}) })
+  const client = new WdkIndexerClient({ apiKey: 'test-key', fetch: mockFetch })
+
+  try {
+    await client.getTokenBalance('invalid-chain', 'usdt', '0x1234')
+    t.fail('Should have thrown')
+  } catch (error) {
+    t.ok(error instanceof WdkIndexerValidationError)
+    t.ok(error.message.includes('Invalid blockchain'))
+    t.ok(error.message.includes('invalid-chain'))
+  }
+})
+
+test('WdkIndexerClient - validates token parameter', async (t) => {
+  const mockFetch = async () => ({ ok: true, json: async () => ({}) })
+  const client = new WdkIndexerClient({ apiKey: 'test-key', fetch: mockFetch })
+
+  try {
+    await client.getTokenBalance('ethereum', 'invalid-token', '0x1234')
+    t.fail('Should have thrown')
+  } catch (error) {
+    t.ok(error instanceof WdkIndexerValidationError)
+    t.ok(error.message.includes('Invalid token'))
+    t.ok(error.message.includes('invalid-token'))
+  }
+})
+
+test('WdkIndexerClient - validates batch size limit', async (t) => {
+  const mockFetch = async () => ({ ok: true, json: async () => ([]) })
+  const client = new WdkIndexerClient({ apiKey: 'test-key', fetch: mockFetch })
+
+  const requests = Array(11).fill({ blockchain: 'ethereum', token: 'usdt', address: '0x1234' })
+
+  try {
+    await client.getBatchTokenBalances(requests)
+    t.fail('Should have thrown')
+  } catch (error) {
+    t.ok(error instanceof WdkIndexerValidationError)
+    t.ok(error.message.includes('exceeds limit'))
+    t.ok(error.message.includes('11'))
+    t.ok(error.message.includes('10'))
+  }
+})
+
+test('WdkIndexerClient - validates blockchain in batch requests', async (t) => {
+  const mockFetch = async () => ({ ok: true, json: async () => ([]) })
+  const client = new WdkIndexerClient({ apiKey: 'test-key', fetch: mockFetch })
+
+  try {
+    await client.getBatchTokenTransfers([
+      { blockchain: 'ethereum', token: 'usdt', address: '0x1234' },
+      { blockchain: 'invalid-chain', token: 'usdt', address: '0x5678' }
+    ])
+    t.fail('Should have thrown')
+  } catch (error) {
+    t.ok(error instanceof WdkIndexerValidationError)
+    t.ok(error.message.includes('Invalid blockchain'))
+  }
 })
 
 test('WdkIndexerClient - health with mock fetch', async (t) => {

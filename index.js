@@ -36,6 +36,9 @@ export const BLOCKCHAINS = [
 /** Supported tokens */
 export const TOKENS = ['usdt', 'xaut', 'btc']
 
+/** Maximum number of addresses allowed in a batch request */
+export const BATCH_LIMIT = 10
+
 /**
  * Base error class for SDK errors
  */
@@ -53,7 +56,7 @@ export class WdkIndexerApiError extends WdkIndexerError {
   constructor (apiError) {
     super(apiError.message)
     this.name = 'WdkIndexerApiError'
-    this.status = apiError.status
+    this.status = apiError.status ?? null
     this.errorType = apiError.error
   }
 }
@@ -80,6 +83,55 @@ export class WdkIndexerNetworkError extends WdkIndexerError {
 }
 
 /**
+ * Error thrown when client-side validation fails
+ */
+export class WdkIndexerValidationError extends WdkIndexerError {
+  constructor (message) {
+    super(message)
+    this.name = 'WdkIndexerValidationError'
+  }
+}
+
+/**
+ * Validate blockchain parameter
+ * @param {string} blockchain
+ * @throws {WdkIndexerValidationError}
+ */
+function validateBlockchain (blockchain) {
+  if (!BLOCKCHAINS.includes(blockchain)) {
+    throw new WdkIndexerValidationError(
+      `Invalid blockchain: "${blockchain}". Supported blockchains: ${BLOCKCHAINS.join(', ')}`
+    )
+  }
+}
+
+/**
+ * Validate token parameter
+ * @param {string} token
+ * @throws {WdkIndexerValidationError}
+ */
+function validateToken (token) {
+  if (!TOKENS.includes(token)) {
+    throw new WdkIndexerValidationError(
+      `Invalid token: "${token}". Supported tokens: ${TOKENS.join(', ')}`
+    )
+  }
+}
+
+/**
+ * Validate batch request size
+ * @param {Array} requests
+ * @throws {WdkIndexerValidationError}
+ */
+function validateBatchSize (requests) {
+  if (requests.length > BATCH_LIMIT) {
+    throw new WdkIndexerValidationError(
+      `Batch request exceeds limit: ${requests.length} addresses provided, maximum is ${BATCH_LIMIT}`
+    )
+  }
+}
+
+/**
  * Check if a response is an API error
  * @param {unknown} response
  * @returns {boolean}
@@ -89,8 +141,7 @@ export function isApiError (response) {
     typeof response === 'object' &&
     response !== null &&
     'error' in response &&
-    'message' in response &&
-    'status' in response
+    'message' in response
   )
 }
 
@@ -274,6 +325,8 @@ export class WdkIndexerClient {
    * ```
    */
   async getTokenTransfers (blockchain, token, address, options) {
+    validateBlockchain(blockchain)
+    validateToken(token)
     return this._request(
       'GET',
       `/api/v1/${blockchain}/${token}/${encodeURIComponent(
@@ -306,6 +359,11 @@ export class WdkIndexerClient {
    * ```
    */
   async getBatchTokenTransfers (requests) {
+    validateBatchSize(requests)
+    for (const req of requests) {
+      validateBlockchain(req.blockchain)
+      validateToken(req.token)
+    }
     return this._request('POST', '/api/v1/batch/token-transfers', {
       body: requests
     })
@@ -328,6 +386,8 @@ export class WdkIndexerClient {
    * ```
    */
   async getTokenBalance (blockchain, token, address) {
+    validateBlockchain(blockchain)
+    validateToken(token)
     return this._request(
       'GET',
       `/api/v1/${blockchain}/${token}/${encodeURIComponent(
@@ -353,6 +413,11 @@ export class WdkIndexerClient {
    * ```
    */
   async getBatchTokenBalances (requests) {
+    validateBatchSize(requests)
+    for (const req of requests) {
+      validateBlockchain(req.blockchain)
+      validateToken(req.token)
+    }
     return this._request('POST', '/api/v1/batch/token-balances', {
       body: requests
     })
