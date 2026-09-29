@@ -187,13 +187,16 @@ export function isTokenBalanceResponse(
  * Tether WDK Indexer HTTP Client
  */
 export class WdkIndexerClient {
-  /** API Key for authentication */
+  /** API key sent with direct requests, or undefined when a proxy supplies it */
   readonly apiKey: string | undefined;
   /** Base URL for the API */
   readonly baseUrl: string;
   /** Request timeout in milliseconds */
   readonly timeout: number;
 
+  /**
+   * @throws {WdkIndexerError} If no fetch implementation is available and none was provided in the config.
+   */
   constructor(config: WdkIndexerConfig);
 
   /**

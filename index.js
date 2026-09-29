@@ -188,6 +188,7 @@ export class WdkIndexerClient {
    * @param {string} [config.baseUrl='https://wdk-api.tether.io'] - Base URL for the API
    * @param {number} [config.timeout=30000] - Request timeout in milliseconds
    * @param {typeof fetch} [config.fetch] - Custom fetch implementation
+   * @throws {WdkIndexerError} If no fetch implementation is available and none was provided in the config.
    */
   constructor (config) {
     this.apiKey = config.apiKey
