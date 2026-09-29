@@ -184,16 +184,13 @@ export class WdkIndexerClient {
   /**
    * Create a new WdkIndexerClient instance
    * @param {object} config - Client configuration
-   * @param {string} config.apiKey - API Key for authentication
+   * @param {string} [config.apiKey] - API key for direct requests. Omit when a proxy supplies it.
    * @param {string} [config.baseUrl='https://wdk-api.tether.io'] - Base URL for the API
    * @param {number} [config.timeout=30000] - Request timeout in milliseconds
    * @param {typeof fetch} [config.fetch] - Custom fetch implementation
+   * @throws {WdkIndexerError} If no fetch implementation is available and none was provided in the config.
    */
   constructor (config) {
-    if (!config.apiKey) {
-      throw new WdkIndexerError('API key is required')
-    }
-
     this.apiKey = config.apiKey
     this.baseUrl = (config.baseUrl || 'https://wdk-api.tether.io').replace(
       /\/$/,
@@ -236,10 +233,11 @@ export class WdkIndexerClient {
       }
     }
 
+    /** @type {Record<string, string>} */
     const headers = {
-      'x-api-key': this.apiKey,
       'Content-Type': 'application/json'
     }
+    if (this.apiKey) headers['x-api-key'] = this.apiKey
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)

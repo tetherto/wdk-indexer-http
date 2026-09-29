@@ -30,13 +30,23 @@ import {
   createClient
 } from '../index.js'
 
-test('WdkIndexerClient - constructor requires apiKey', async (t) => {
-  t.exception(() => new WdkIndexerClient({}), /API key is required/)
-  t.exception(
-    () => new WdkIndexerClient({ apiKey: '' }),
-    /API key is required/
-  )
-})
+for (const apiKey of [undefined, '']) {
+  test(`WdkIndexerClient - proxy requests omit an ${apiKey === undefined ? 'unset' : 'empty'} API key`, async (t) => {
+    const client = new WdkIndexerClient({
+      baseUrl: 'https://proxy.example.com/',
+      ...(apiKey === undefined ? {} : { apiKey }),
+      fetch: async (url, options) => {
+        t.is(url, 'https://proxy.example.com/api/v1/health')
+        t.is(options.method, 'GET')
+        t.absent(Object.hasOwn(options.headers, 'x-api-key'))
+        t.is(options.headers['Content-Type'], 'application/json')
+        return { ok: true, json: async () => ({ status: 'ok' }) }
+      }
+    })
+
+    t.alike(await client.health(), { status: 'ok' })
+  })
+}
 
 test('WdkIndexerClient - constructor sets defaults', async (t) => {
   const client = new WdkIndexerClient({ apiKey: 'test-key' })

@@ -137,8 +137,8 @@ export type BatchTokenBalancesResponseItem = TokenBalanceResponse | ApiError;
 
 /** SDK configuration options */
 export interface WdkIndexerConfig {
-  /** API Key for authentication */
-  apiKey: string;
+  /** API key for direct requests. Omit when a proxy supplies it. */
+  apiKey?: string;
   /** Base URL for the API (default: https://wdk-api.tether.io) */
   baseUrl?: string;
   /** Request timeout in milliseconds (default: 30000) */
@@ -187,13 +187,16 @@ export function isTokenBalanceResponse(
  * Tether WDK Indexer HTTP Client
  */
 export class WdkIndexerClient {
-  /** API Key for authentication */
-  readonly apiKey: string;
+  /** API key sent with direct requests, or undefined when a proxy supplies it */
+  readonly apiKey: string | undefined;
   /** Base URL for the API */
   readonly baseUrl: string;
   /** Request timeout in milliseconds */
   readonly timeout: number;
 
+  /**
+   * @throws {WdkIndexerError} If no fetch implementation is available and none was provided in the config.
+   */
   constructor(config: WdkIndexerConfig);
 
   /**

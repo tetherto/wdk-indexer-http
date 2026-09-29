@@ -6,7 +6,16 @@ HTTP client for the Tether WDK Indexer API. Access blockchain token transfers an
 
 ## Getting an API Key
 
-To use this SDK, you need an API key. Request one at: https://wdk-api.tether.io/register
+Direct requests to the WDK Indexer API need an API key. Request one at: https://wdk-api.tether.io/register
+
+For a client-side app, keep the key on your server and point the client at a proxy
+that adds it. Omit `apiKey` so the client sends no `x-api-key` header:
+
+```javascript
+const client = new WdkIndexerClient({
+  baseUrl: 'https://my-proxy.example'
+})
+```
 
 ## Installation
 
@@ -52,7 +61,7 @@ console.log(`Found ${transfers.transfers.length} transfers`)
 
 ```javascript
 const client = new WdkIndexerClient({
-  apiKey: 'your-api-key',           // Required: API Key for authentication
+  apiKey: 'your-api-key',           // Optional when a proxy supplies authentication
   baseUrl: 'https://...',           // Optional: Custom API URL (default: https://wdk-api.tether.io)
   timeout: 30000,                   // Optional: Request timeout in ms (default: 30000)
   fetch: customFetch                // Optional: Custom fetch implementation
