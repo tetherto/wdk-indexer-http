@@ -1,8 +1,10 @@
 # @tetherto/wdk-indexer-http
 
-HTTP client for the Tether WDK Indexer API. Access blockchain token transfers and balances across multiple networks including Ethereum, Tron, Polygon, Arbitrum, TON, Bitcoin, and more.
+HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether. Access blockchain token transfers and balances across multiple networks including Ethereum, Tron, Polygon, Arbitrum, TON, Bitcoin, and more.
 
 > **Note:** This package is currently in beta. Test in a dev setup first.
+
+See the [Indexer API documentation](https://docs.wdk.tether.io/tools/indexer-api/).
 
 ## Getting an API Key
 

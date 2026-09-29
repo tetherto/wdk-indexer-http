@@ -1,7 +1,7 @@
 {
   "name": "@tetherto/wdk-indexer-http",
   "version": "1.0.0-beta.1",
-  "description": "HTTP client for the Tether WDK Indexer API - Access blockchain token transfers and balances",
+  "description": "HTTP client for the Indexer API from WDK (Wallet Development Kit) by Tether, providing blockchain token transfers and balances.",
   "type": "module",
   "main": "index.js",
   "types": "types/index.d.ts",
@@ -79,5 +79,5 @@
   "bugs": {
     "url": "https://github.com/tetherto/wdk-indexer-http/issues"
   },
-  "homepage": "https://github.com/tetherto/wdk-indexer-http#readme"
+  "homepage": "https://docs.wdk.tether.io/tools/indexer-api/"
 }
