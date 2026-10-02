@@ -1,249 +1,128 @@
-// Copyright 2025 Tether Operations Limited
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 'use strict'
 
-/**
- * Tether WDK Indexer HTTP Client - Usage Examples
- *
- * This file demonstrates how to use the SDK to interact with the API.
- * Make sure to replace 'your-api-key' with your actual API key.
- */
+// Walk through the WDK Indexer API with @tetherto/wdk-indexer-http.
+//   node examples/usage.js                                   health + chains only
+//   WDK_INDEXER_API_KEY=... node examples/usage.js           + every read method
+//   WDK_INDEXER_API_KEY=... node examples/usage.js --wallets + register, update, delete a wallet
+//   WDK_INDEXER_BASE_URL=...                                 targets another deployment
 
-import {
+const {
   WdkIndexerClient,
   WdkIndexerApiError,
   WdkIndexerTimeoutError,
   WdkIndexerNetworkError,
-  isTokenTransfersResponse,
-  isTokenBalanceResponse,
-  BLOCKCHAINS
-} from '../index.js'
+  WdkIndexerValidationError,
+  isApiError
+} = require('@tetherto/wdk-indexer-http')
 
-// Initialize the client
+const ETH_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+const TRON_ADDRESS = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+
 const client = new WdkIndexerClient({
-  apiKey: process.env.WDK_INDEXER_API_KEY || 'your-api-key',
-  // Optional: custom timeout (default: 30000ms)
-  timeout: 60000
+  apiKey: process.env.WDK_INDEXER_API_KEY,
+  baseUrl: process.env.WDK_INDEXER_BASE_URL,
+  timeout: 20000
 })
 
-/**
- * Example 1: Health Check
- */
-async function checkHealth () {
-  console.log('=== Health Check ===')
-  try {
-    const health = await client.health()
-    console.log(`API Status: ${health.status}`)
-    console.log(`Timestamp: ${health.timestamp}`)
-  } catch (error) {
-    console.error('Health check failed:', error)
+async function publicEndpoints () {
+  const health = await client.health() // resolves on 200 and 503
+  console.log('health:', health.status, health.summary)
+
+  const { chains } = await client.getChains()
+  for (const chain of chains) console.log(`  ${chain.name}: ${chain.tokens.join(', ')}`)
+}
+
+async function addressLookups () {
+  const { tokenBalance } = await client.getTokenBalance('ethereum', 'usdt', ETH_ADDRESS)
+  console.log('balance:', tokenBalance.amount, tokenBalance.token)
+
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000 // timestamps are milliseconds
+  const { transfers } = await client.getTokenTransfers('ethereum', 'usdt', ETH_ADDRESS, { limit: 5, fromTs: weekAgo })
+  console.log('recent transfers:', transfers.length)
+
+  if (transfers.length > 0) {
+    const txHash = transfers[0].transactionHash
+    const tx = await client.getTransactionTransfers('ethereum', 'usdt', txHash)
+    console.log(`transfers in ${txHash}:`, tx.transfers.length)
   }
 }
 
-/**
- * Example 2: Get Token Balance
- */
-async function getBalance () {
-  console.log('\n=== Get Token Balance ===')
-  try {
-    const balance = await client.getTokenBalance(
-      'ethereum',
-      'usdt',
-      '0xdAC17F958D2ee523a2206206994597C13D831ec7' // USDt contract address as example
-    )
+async function batches () {
+  const requests = [
+    { blockchain: 'ethereum', token: 'usdt', address: ETH_ADDRESS },
+    { blockchain: 'tron', token: 'usdt', address: TRON_ADDRESS },
+    { blockchain: 'tron', token: 'usdt', address: 'not-an-address' } // fails on its own
+  ]
 
-    console.log(`Blockchain: ${balance.tokenBalance.blockchain}`)
-    console.log(`Token: ${balance.tokenBalance.token}`)
-    console.log(`Balance: ${balance.tokenBalance.amount}`)
-  } catch (error) {
-    handleError(error)
-  }
+  const balances = await client.getBatchTokenBalances(requests)
+  balances.forEach((item, i) => {
+    if (isApiError(item)) console.log(`  balance[${i}] error:`, item.error, item.message || '')
+    else console.log(`  balance[${i}]:`, item.tokenBalance.blockchain, item.tokenBalance.amount)
+  })
+
+  const transfers = await client.getBatchTokenTransfers(requests.map((r) => ({ ...r, limit: 3 })))
+  transfers.forEach((item, i) => {
+    if (isApiError(item)) console.log(`  transfers[${i}] error:`, item.error, item.message || '')
+    else console.log(`  transfers[${i}]:`, item.transfers.length)
+  })
 }
 
-/**
- * Example 3: Get Token Transfers with Filters
- */
-async function getTransfers () {
-  console.log('\n=== Get Token Transfers ===')
-  try {
-    const oneWeekAgo = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60
+async function walletReads () {
+  const { wallets } = await client.listWallets()
+  console.log('registered wallets:', wallets.length)
 
-    const result = await client.getTokenTransfers(
-      'ethereum',
-      'usdt',
-      '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-      {
-        limit: 10,
-        fromTs: oneWeekAgo
-      }
-    )
+  if (wallets.length > 0) {
+    const wallet = await client.getWallet(wallets[0].id)
+    console.log('first wallet:', wallet.id, wallet.name, wallet.enabled)
 
-    console.log(`Found ${result.transfers.length} transfers`)
-
-    for (const transfer of result.transfers) {
-      const date = new Date(transfer.timestamp * 1000).toISOString()
-      console.log(
-        `  ${date}: ${transfer.amount} from ${transfer.from} to ${transfer.to}`
-      )
-    }
-  } catch (error) {
-    handleError(error)
+    const { transfers } = await client.getWalletTransfers(wallet.id, { type: 'received', limit: 5 })
+    console.log('its received transfers:', transfers.length)
   }
+
+  const { transfers } = await client.getTransfers({ token: 'usdt', limit: 5, sort: 'desc' })
+  console.log('transfers across all wallets:', transfers.length)
 }
 
-/**
- * Example 4: Batch Token Balances
- */
-async function getBatchBalances () {
-  console.log('\n=== Batch Token Balances ===')
-  try {
-    const address = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
-
-    // Get USDt balance across multiple chains
-    const requests = ['ethereum', 'polygon', 'arbitrum'].map((blockchain) => ({
-      blockchain,
-      token: 'usdt',
-      address
-    }))
-
-    const results = await client.getBatchTokenBalances(requests)
-
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i]
-      const chain = requests[i]?.blockchain
-
-      if (isTokenBalanceResponse(result)) {
-        console.log(`  ${chain}: ${result.tokenBalance.amount} USDt`)
-      } else {
-        console.log(`  ${chain}: Error - ${result.message}`)
-      }
-    }
-  } catch (error) {
-    handleError(error)
+// Creates server state, so it only runs with --wallets.
+async function walletLifecycle () {
+  const { wallets } = await client.registerWallets([
+    { type: 'client_wallet', name: 'usage example', addresses: { ethereum: ETH_ADDRESS } }
+  ])
+  const [result] = wallets
+  if (result.status !== 201) {
+    console.log('registration failed:', result.status, result.error)
+    return
   }
-}
-
-/**
- * Example 5: Batch Token Transfers
- */
-async function getBatchTransfers () {
-  console.log('\n=== Batch Token Transfers ===')
-  try {
-    const results = await client.getBatchTokenTransfers([
-      {
-        blockchain: 'ethereum',
-        token: 'usdt',
-        address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-        limit: 5
-      },
-      {
-        blockchain: 'tron',
-        token: 'usdt',
-        address: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', // USDt contract on Tron
-        limit: 5
-      }
-    ])
-
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i]
-      const chain = i === 0 ? 'Ethereum' : 'Tron'
-
-      if (isTokenTransfersResponse(result)) {
-        console.log(`  ${chain}: ${result.transfers.length} transfers found`)
-      } else {
-        console.log(`  ${chain}: Error - ${result.message}`)
-      }
-    }
-  } catch (error) {
-    handleError(error)
-  }
-}
-
-/**
- * Example 6: Track Total USDt Holdings Across All Chains
- */
-async function trackTotalHoldings (address) {
-  console.log('\n=== Total USDt Holdings Across All Chains ===')
-  console.log(`Address: ${address}`)
+  console.log('registered wallet:', result.id)
 
   try {
-    const requests = BLOCKCHAINS.map((blockchain) => ({
-      blockchain,
-      token: 'usdt',
-      address
-    }))
-
-    const results = await client.getBatchTokenBalances(requests)
-
-    let total = 0
-    const balances = {}
-
-    for (let i = 0; i < results.length; i++) {
-      const result = results[i]
-      const chain = BLOCKCHAINS[i]
-
-      if (chain && isTokenBalanceResponse(result)) {
-        const amount = parseFloat(result.tokenBalance.amount)
-        if (amount > 0) {
-          balances[chain] = result.tokenBalance.amount
-          total += amount
-        }
-      }
-    }
-
-    console.log('\nBalances by chain:')
-    for (const [chain, amount] of Object.entries(balances)) {
-      console.log(`  ${chain}: ${amount}`)
-    }
-    console.log(`\nTotal: ${total}`)
-  } catch (error) {
-    handleError(error)
+    const updated = await client.updateWallet(result.id, { name: 'usage example (paused)', enabled: false })
+    console.log('updated:', updated.name, updated.enabled)
+  } finally {
+    const { success } = await client.deleteWallet(result.id)
+    console.log('deleted:', success)
   }
 }
 
-/**
- * Error handler helper
- */
-function handleError (error) {
-  if (error instanceof WdkIndexerApiError) {
-    console.error(
-      `API Error [${error.status}]: ${error.errorType} - ${error.message}`
-    )
-  } else if (error instanceof WdkIndexerTimeoutError) {
-    console.error(`Timeout: ${error.message}`)
-  } else if (error instanceof WdkIndexerNetworkError) {
-    console.error(`Network Error: ${error.message}`)
-  } else {
-    console.error('Unknown error:', error)
-  }
-}
-
-/**
- * Run all examples
- */
 async function main () {
-  console.log('Tether WDK Indexer HTTP Client Examples\n')
-  console.log(
-    'Note: Set WDK_INDEXER_API_KEY environment variable to run these examples.\n'
-  )
+  await publicEndpoints()
 
-  await checkHealth()
-  await getBalance()
-  await getTransfers()
-  await getBatchBalances()
-  await getBatchTransfers()
-  await trackTotalHoldings('0x742d35Cc6634C0532925a3b844Bc9e7595f5aB12')
+  if (!process.env.WDK_INDEXER_API_KEY) {
+    console.log('Set WDK_INDEXER_API_KEY to run the authenticated examples.')
+    return
+  }
+
+  await addressLookups()
+  await batches()
+  await walletReads()
+  if (process.argv.includes('--wallets')) await walletLifecycle()
 }
 
-main().catch(console.error)
+main().catch((err) => {
+  if (err instanceof WdkIndexerValidationError) console.error('Invalid input:', err.message)
+  else if (err instanceof WdkIndexerApiError) console.error(`API error ${err.status} (${err.errorType}):`, err.message)
+  else if (err instanceof WdkIndexerTimeoutError) console.error(`Timed out after ${err.timeout}ms`)
+  else if (err instanceof WdkIndexerNetworkError) console.error('Network error:', err.cause)
+  else console.error(err)
+  process.exitCode = 1
+})

@@ -1,38 +1,39 @@
 {
   "name": "@tetherto/wdk-indexer-http",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "HTTP client for the Tether WDK Indexer API - Access blockchain token transfers and balances",
-  "type": "module",
   "main": "index.js",
-  "types": "types/index.d.ts",
+  "types": "index.d.ts",
   "exports": {
     ".": {
-      "types": "./types/index.d.ts",
-      "import": "./index.js"
+      "types": "./index.d.ts",
+      "default": "./index.js"
     },
     "./bare": {
-      "types": "./types/index.d.ts",
-      "import": "./bare.js"
-    },
-    "./types": {
-      "types": "./types/index.d.ts"
+      "types": "./index.d.ts",
+      "default": "./index.js"
     },
     "./package.json": "./package.json"
   },
+  "imports": {
+    "#fetch": {
+      "bare": "bare-fetch",
+      "default": "./lib/fetch.js"
+    }
+  },
   "files": [
     "index.js",
-    "bare.js",
-    "types",
-    "README.md",
-    "LICENSE"
+    "index.d.ts",
+    "lib",
+    "CHANGELOG.md"
   ],
   "scripts": {
-    "lint": "standard --ignore bare.js",
-    "lint:fix": "standard --ignore bare.js --fix",
-    "test": "brittle tests/*.test.js",
-    "test:integration": "brittle tests/*.integration.js",
-    "test:bare": "bare tests/bare-runtime.test.mjs",
-    "types": "tsc --declaration --emitDeclarationOnly --allowJs --outDir types"
+    "lint": "standard",
+    "test": "brittle test/*.js test/*.mjs",
+    "test:bare": "brittle-bare test/*.js test/*.mjs",
+    "test:integration": "brittle test/integration/*.js",
+    "test:integration:bare": "brittle-bare test/integration/*.js",
+    "test:types": "npx -y -p typescript@5 tsc -p test/types && npx -y -p typescript@5 tsc -p test/types/tsconfig.bundler.json"
   },
   "keywords": [
     "tether",
@@ -40,37 +41,38 @@
     "indexer",
     "usdt",
     "xaut",
+    "usat",
     "btc",
     "blockchain",
     "ethereum",
-    "tron",
-    "polygon",
     "arbitrum",
+    "avalanche",
+    "polygon",
+    "tron",
     "ton",
     "bitcoin",
+    "spark",
     "token",
     "transfers",
     "balance",
     "api",
-    "sdk"
+    "sdk",
+    "bare"
   ],
   "author": "Tether Operations Limited",
   "license": "Apache-2.0",
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "engines": {
-    "node": ">=18",
-    "npm": ">=11"
+    "node": ">=22"
+  },
+  "dependencies": {
+    "bare-fetch": "^3.4.0"
   },
   "devDependencies": {
-    "brittle": "^3.7.0",
-    "standard": "^17.1.2",
-    "typescript": "^5.3.0"
-  },
-  "optionalDependencies": {
-    "bare-wdk-runtime": "2.0.1"
+    "brittle": "^3.19.1",
+    "standard": "^17.1.2"
   },
   "repository": {
     "type": "git",
