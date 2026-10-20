@@ -53,7 +53,7 @@ export type FetchLike = (url: string, init: FetchInitLike) => Promise<FetchRespo
 export interface WdkIndexerClientConfig {
   /** Sent as X-API-KEY. Required by every method except health() and getChains(). */
   apiKey?: string
-  /** Defaults to https://wdk-api.tether.su. A trailing slash is stripped. */
+  /** Defaults to https://wdk-api.tether.io. A trailing slash is stripped. */
   baseUrl?: string
   /** Request timeout in milliseconds. Defaults to 30000. */
   timeout?: number
