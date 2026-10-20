@@ -31,7 +31,7 @@ A rewrite against the WDK Indexer OpenAPI v1 spec. If you upgrade from 1.0.0-bet
 ### Breaking changes
 
 - **The ESM default export is removed.** `import WdkIndexerClient from '@tetherto/wdk-indexer-http'` now gives you the exports object, not the class. Use the named import: `import { WdkIndexerClient } from '@tetherto/wdk-indexer-http'`. `require()` does not change.
-- The default base URL is now `https://wdk-api.tether.su` (it was `https://wdk-api.tether.io`). Pass `baseUrl` to use another deployment.
+- The default base URL is `https://wdk-api.tether.io`. Pass `baseUrl` to use another deployment.
 - `plasma` is no longer a known blockchain. `avalanche` and the `usat` token are new.
 - `fromTs` and `toTs` are in milliseconds, not seconds, in `getTokenTransfers()` and in batch transfer items. Multiply old values by 1000.
 - `health()` returns a different body:

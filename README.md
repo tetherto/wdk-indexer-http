@@ -70,7 +70,7 @@ The `@tetherto/wdk-indexer-http/bare` subpath is an alias of the main entry. It 
 ```javascript
 const client = new WdkIndexerClient({
   apiKey: 'your-api-key',               // optional. Required by every method except health() and getChains()
-  baseUrl: 'https://wdk-api.tether.su', // optional. This is the default. Trailing slashes are removed
+  baseUrl: 'https://wdk-api.tether.io', // optional. This is the default. Trailing slashes are removed
   timeout: 30000,                       // optional. Per-request timeout in ms (default 30000)
   fetch: customFetch                    // optional. Replaces the built-in fetch
 })
@@ -360,7 +360,7 @@ The integration tests read these environment variables:
 |---|---|---|
 | `WDK_INDEXER_API_KEY` | For authenticated tests | API key for the `X-API-KEY` header. Without it, only the `health()` and `getChains()` tests run. The tests skip the rest. |
 | `WDK_INDEXER_WALLET_TESTS` | No | Set to `1` to also run the wallet lifecycle test. It registers, updates and then deletes a wallet on your account. |
-| `WDK_INDEXER_BASE_URL` | No | Target another deployment instead of `https://wdk-api.tether.su`. |
+| `WDK_INDEXER_BASE_URL` | No | Target another deployment instead of `https://wdk-api.tether.io`. |
 
 The tests do not read a `.env` file. To use one, export it into the shell first:
 

@@ -6,7 +6,7 @@ const { WdkIndexerError, WdkIndexerApiError, WdkIndexerTimeoutError } = require(
 const { reply, mockFetch, rejects } = require('./helpers')
 
 const KEY = 'test-key'
-const BASE = 'https://wdk-api.tether.su/api/v1'
+const BASE = 'https://wdk-api.tether.io/api/v1'
 const ADDR = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'
 const TX = '0x' + 'ab'.repeat(32)
 
@@ -189,7 +189,7 @@ test('baseUrl trailing slashes are stripped', async (t) => {
 test('defaults to the public base URL', async (t) => {
   const fetch = mockFetch()
   await new WdkIndexerClient({ fetch }).getChains()
-  t.is(fetch.calls[0].url, 'https://wdk-api.tether.su/api/v1/chains')
+  t.is(fetch.calls[0].url, 'https://wdk-api.tether.io/api/v1/chains')
 })
 
 test('timeout option is passed to requests', async (t) => {
